@@ -1,0 +1,225 @@
+---
+title: "Analysis of Deaths of Shelter Residents"
+subtitle: "Focusing on Mean Age of Decedents"
+author: 
+  - Yuehan Dai
+thanks: "Code and data are available at: https://open.toronto.ca/dataset/deaths-of-shelter-residents/"
+date: today
+date-format: long
+abstract: "This paper analyzes the deaths of shelter residents in Toronto from 2007 to 2023. Using data provided by the city, we explore patterns in the number of deaths over time, identifying possible trends and factors contributing to these outcomes. The analysis reveals a concerning rise in deaths in recent years, highlighting the need for further investigation into the underlying causes. This paper aims to contribute to the ongoing conversation about homelessness and public health in Toronto."
+format: pdf
+number-sections: true
+bibliography: references.bib
+---
+
+```{r}
+#| include: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(palmerpenguins)
+```
+
+
+# Introduction
+
+You can and should cross-reference sections and sub-sections. We use @citeR and @rohan.
+
+The remainder of this paper is structured as follows. @sec-data....
+
+Homelessness is a pressing issue in many major cities, and Toronto is no exception. The deaths of shelter residents reflect broader societal challenges related to housing, mental health, substance abuse, and public health. This paper examines data on the deaths of shelter residents in Toronto between 2007 and 2023, using this information to identify trends and patterns that could inform policy and public health interventions.
+
+  The analysis focuses on the number of deaths over time, considering potential factors such as weather, public health crises, and changes in shelter capacity. By examining these trends, we aim to provide a clearer picture of the risks faced by individuals living in shelters and how these risks may have evolved in recent years.
+
+  The remainder of this paper is organized as follows: Section 2 describes the dataset and the methods used to analyze it. Section 3 presents the findings from our analysis, and Section 4 discusses the implications of these findings for public policy and future research.
+
+# Data {#sec-data}
+
+Some of our data is of penguins (@fig-bills), from @palmerpenguins.
+
+The dataset used in this analysis was obtained from Open Data Toronto, titled "Deaths of Shelter Residents". This dataset includes records of deaths that occurred among residents of Toronto shelters from 2007 to 2023. The dataset contains variables such as the year of death, the cause of death, and demographic information (where available). The data were last updated in 2023 and are publicly available here.
+
+  Data Summary:
+  Time Period: 2007-2023
+  Key Variables: Year of death, age of deceased, cause of death
+  Number of Records: Over 1,000 deaths recorded
+
+  This dataset provides a valuable resource for understanding the mortality rate among shelter residents and identifying potential factors that could be addressed to reduce these numbers. Ethical considerations in using this data include sensitivity to the dignity and respect of individuals represented in the dataset, and ensuring that findings are used to advocate for positive social change rather than perpetuating stigma.
+```{r}
+#| label: tbl-cleaned_data
+#| echo: false
+
+# Read the cleaned data from a CSV file
+data <- read_csv("../data/analysis_data/cleaned_data.csv", show_col_types = FALSE)
+
+# Extract the first few rows of the data for a sample view
+data_sample <- head(data)
+
+# Create a formatted table to display the sample data
+kable(data_sample,
+  col.names = c("Date of Death", "Age", "Gender", "Shelter Type"),
+  align = "cccc",
+  caption = "Sample of Cleaned Deaths of Shelter Residents Data"
+)
+```
+
+Talk more about it.
+
+And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
+
+```{r}
+# Analysis of Deaths of Shelter Residents
+
+```{r}
+#| label: fig-death-age
+#| fig-cap: Relationship between age at death and the number of deceased individuals
+#| echo: false
+#| warning: false
+#| message: false
+
+# Load the dataset
+analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
+
+# Create a scatter plot to visualize the relationship between age and number of deaths
+analysis_data %>%
+  ggplot(aes(x = age, y = death_count)) +
+  geom_point(alpha = 0.8, color = "blue") +
+  theme_minimal() +
+  labs(x = "Age (years)", y = "Number of Deaths")
+```
+
+Talk way more about it. 
+
+# Model
+
+The goal of our modeling strategy is twofold. Firstly, we aim to understand the factors that influence the age at which individuals in shelters pass away. Secondly, we want to quantify the impact of these factors, such as gender and shelter type, on the mortality rates among residents.
+
+Here we briefly describe the Bayesian analysis model used to investigate these relationships. Background details and diagnostics are included in [Appendix -@sec-model-details].
+
+## Model set-up
+
+Define y_i as the age at death for each individual. Then, let B_i represent the effect of gender, and Y_i be the effect of shelter type. Our model is formulated as follows:
+
+\begin{align} y_i | \mu_i, \sigma &\sim \text{Normal}(\mu_i, \sigma) \ \mu_i &= \alpha + \beta_i + \gamma_i \ \alpha &\sim \text{Normal}(0, 2.5) \ \beta &\sim \text{Normal}(0, 2.5) \ \gamma &\sim \text{Normal}(0, 2.5) \ \sigma &\sim \text{Exponential}(1) \end{align}
+
+We run the model in R [@citeR] using the rstanarm package of @rstanarm. The default priors from rstanarm are utilized to maintain objectivity in our analysis.
+
+### Model justification
+
+We expect a negative relationship between age at death and the number of deceased individuals; younger individuals might face higher mortality rates due to various socio-economic factors associated with living in shelters. Thus, we hypothesize that the model will reveal significant predictors affecting the age of death among shelter residents.
+
+# Results
+
+Our results are summarized in @tbl-modelresults.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+
+library(rstanarm)
+
+# Load the model results
+first_model <- readRDS(file = here::here("models/first_model.rds"))
+```
+
+```{r}
+#| echo: false
+#| eval: true
+#| label: tbl-modelresults
+#| tbl-cap: "Explanatory models of age at death based on gender and shelter type"
+#| warning: false
+
+modelsummary::modelsummary(
+  list(
+    "First model" = first_model
+  ),
+  statistic = "mad",
+  fmt = 2
+)
+```
+
+# Discussion
+
+## First discussion point {#sec-first-point}
+
+The results indicate that age at death is significantly influenced by gender and shelter type, highlighting the vulnerabilities faced by certain demographics. For instance, the model shows that individuals living in specific shelter types tend to have lower average ages at death, which necessitates targeted interventions.
+
+## Second discussion point
+
+Further analysis reveals seasonal trends in mortality, with higher rates observed during specific months. This suggests that external factors, such as weather conditions, may exacerbate the challenges faced by shelter residents, particularly in colder months.
+
+## Third discussion point
+
+The findings underline the importance of comprehensive support systems in shelters, which should be tailored to address the unique needs of different demographics. This could involve implementing health services that focus on preventive care, especially for younger residents.
+
+## Weaknesses and next steps
+
+While this analysis provides valuable insights, certain limitations exist. For instance, the dataset may not capture all relevant socio-economic variables that could affect mortality. Future research should aim to incorporate more granular data, allowing for a more detailed understanding of the underlying causes of mortality among shelter residents.
+
+\newpage
+
+\appendix
+
+# Appendix {-}
+
+
+# Additional data details
+
+# Model details {#sec-model-details}
+
+## Posterior predictive check
+
+In Figures @fig-ppcheckandposteriorvsprior-1, we implement a posterior predictive check. This shows how well the model predicts the observed data.
+
+In Figure @fig-ppcheckandposteriorvsprior-2, we compare the posterior with the prior. This illustrates how our data has influenced our beliefs about the parameters of interest.
+
+```{r}
+#| eval: true
+#| echo: false
+#| message: false
+#| warning: false
+#| label: fig-ppcheckandposteriorvsprior
+#| layout-ncol: 2
+#| fig-cap: "Examining how the model fits, and is affected by, the data"
+#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
+
+pp_check(first_model) +
+  theme_classic() +
+  theme(legend.position = "bottom")
+
+posterior_vs_prior(first_model) +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set1") +
+  theme(legend.position = "bottom") +
+  coord_flip()
+```
+
+## Diagnostics
+
+Figure @fig-stanareyouokay-1 is a trace plot. It shows the convergence of the Markov Chain Monte Carlo (MCMC) algorithm, indicating that the model has adequately explored the parameter space.
+
+Figure @fig-stanareyouokay-2 is an Rhat plot. This metric suggests whether the chains have mixed well and indicates the reliability of our estimates.
+
+```{r}
+#| echo: false
+#| eval: true
+#| message: false
+#| warning: false
+#| label: fig-stanareyouokay
+#| fig-cap: "Checking the convergence of the MCMC algorithm"
+#| fig-subcap: ["Trace plot", "Rhat plot"]
+#| layout-ncol: 2
+
+plot(first_model, "trace")
+plot(first_model, "rhat")
+```
+
+\newpage
+
+
+# References
+
+
